@@ -3,16 +3,9 @@
     <div class="header-area">
         <div class="row align-items-center">
             <!-- nav and search button -->
-            <div class="col-md-6 col-sm-8 clearfix">
-                <div class="nav-btn pull-left">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-
-            </div>
+            
             <!-- profile info & task notification -->
-            <div class="col-md-6 col-sm-4 clearfix">
+            <div class="col-md-12 col-sm-12 clearfix">
                 <div class="user-profile pull-right">
 
                     <h6 class="user-name dropdown-toggle" data-toggle="dropdown">Nombre Usuario<i class="fa fa-angle-down"></i></h6>
@@ -50,7 +43,7 @@
             <div class="col-12 mt-5">
                 <div class="card">
                     <div class="card-body">
-                        <span class="header-title text-md-left pt-3 pb-3">Data Table Primary</span>
+                        <span class="header-title text-md-left pt-5 pb-5">Clientes</span>
                         <a href="javascript:;" id="agregarCliente" data-modal="modalAgrgarModificarCliente" class="btn btn-primary float-right">Agregar Cliente <i class="fa fa-plus"></i></a>
                         <div class="data-tables datatable-primary">
                             <table id="tblClientes" class="text-center" style="width: 100%;">
@@ -61,10 +54,10 @@
                                         <th>Tipo</th>
                                         <th>Correo</th>
                                         <th>Empresa</th>
+                                        <th>Telefono</th>
+                                        <th>Direccion</th>
                                         <th>Estado</th>
-                                        <th>Opciones
-                                            <th />
-
+                                        <th>Opciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -96,6 +89,11 @@
 <script src="https://cdn.datatables.net/1.10.18/js/dataTables.bootstrap4.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/2.2.3/js/responsive.bootstrap.min.js"></script>
+<script src="assets/js/parsley.js"></script>
+<script src="assets/js/notify.js"></script>
+
+
+
 <script>
     $(document).ready(() => {
 
@@ -128,6 +126,16 @@
                     orderable: false
                 },
                 {
+                    data: "TELEFONO",
+                    className: "text-center",
+                    orderable: false
+                },
+                {
+                    data: "DIRECCION",
+                    className: "text-center",
+                    orderable: false
+                },
+                {
                     data: "ESTADO",
                     className: "text-center",
                     orderable: false
@@ -141,16 +149,15 @@
             aoColumnDefs: [
 
                 {
-                    aTargets: [6],
+                    aTargets: [8],
                     mRender: function(data, type, full) {
 
-                        
-                       
+
+
                         return (
                             `<div class="btn-group" role="group" aria-label="Basic example">
-                            <a href="javascript:void(0);" data-id_cliente="${full.ID}" class="btn btn-primary btn_editar_cliente" ><i class="fa fa-edit"></i></a>
-                            <a href="javascript:void(0);" data-id="${full.ID}" class="btn btn-primary btn_eliminar_cliente" ><i class="fa fa-trash-o"></i></a>
-                            <a href="javascript:void(0);" data-id="${full.ID}" class="btn btn-primary btn_direcciones_cliente" ><i class="fa fa-map-pin"></i></a>
+                            <a href="javascript:void(0);" data-modal="modalAgrgarModificarCliente" data-id="${full.ID}" class="btn btn-primary btn_editar_cliente" ><i class="fa fa-edit"></i></a>
+                            <a href="javascript:void(0);" data-id="${full.ID}" class="btn btn-primary btn_eliminar_cliente" ><i  class="fa fa-trash-o"></i></a>
                          </div>
                          `
                         );
@@ -161,34 +168,74 @@
             ],
         });
 
+        // varaianles y constantes;
         const btnCliente = $("#agregarCliente");
-        const editarCliente = $("#btn_editar_cliente");
         const tblCliente = $("#tblClientes");
         const modal = $(".modal");
 
 
-        btnCliente.on("click", llamarModal);
+        //eventos
+        btnCliente.on("click", function() {
+            let urlModal = $(this).attr('data-modal');
+            let option = {
+                "urlModal": $(this).attr('data-modal')
+            }
+            llamarModal(option);
+        });
+
+        
 
         modal.on("click", '#guardarCliente', validarFormulario);
 
+        tblCliente.on("click", ".btn_editar_cliente", function() {
+            let idCliente = $(this).attr('data-id');
+            let urlModal = $(this).attr('data-modal');
+
+            let option = {
+                "urlModal": urlModal,
+                "id": idCliente
+
+            }
+            llamarModal(option);
+        });
+
+        tblCliente.on("click", ".btn_eliminar_cliente", function() {
+            let idCliente = $(this).attr('data-id');
+           
+           
+
+            let option = {
+                "id": idCliente
+            }
+            eliminarCliente(option);
+        });
 
 
-        function llamarModal(e) {
-            let urlModal = e.target.dataset.modal;
+
+
+
+
+        //funciones
+
+        function llamarModal(option) {
+            let {
+                urlModal,
+                id
+            } = option;
+            id = id || '';
 
 
             let modalContent = modal.find('.modal-content').first();
 
-            modalContent.load(`cliente/${urlModal}`, () => modal.modal("show"));
+            modalContent.load(`cliente/${urlModal}/${id}`, () => modal.modal("show"));
 
 
 
-            /*console.log(modal);
-            //$.post(`cliente/${urlModal}`,)*/
+
 
         };
 
-        
+
 
 
         function validarFormulario() {
@@ -201,9 +248,39 @@
         function enviarDatos(cliente) {
 
             $.post(`cliente/guardarCliente`, cliente, (datos) => {
-                console.log(datos)
+                actalizarTabla(datos);
             }, 'json');
         }
+
+        function actalizarTabla(datos) {
+            if (datos['codigo'] == 0) {
+
+                $.notify(datos['mensaje'], "success");
+
+                dtblCliente.ajax.reload();
+                modal.modal("hide");
+
+
+            } else {
+                console.log(datos['mensaje'])
+                for (errores in datos['mensaje']) {
+                    $.notify(`${datos['mensaje'][errores]}`, "danger");
+                }
+            }
+        }
+
+        function eliminarCliente(idCliente){
+            let {
+                id
+            } = idCliente;
+
+            $.post(`cliente/eliminarCliente/${id}`,(datos) => {
+                //actalizarTabla(datos);
+                actalizarTabla(datos);
+            }, 'json');
+        }
+
+        
 
     })
 </script>

@@ -63,12 +63,6 @@ class Cliente extends CI_Controller {
 		$this->load->library('form_validation');
 
 
-		/*
-		nombre: 
-apellido: 
-tipo: 1
-correo: 
-estado: 1 */
 		$config = array(
 			array(
 					'field' => 'nombre',
@@ -100,6 +94,18 @@ estado: 1 */
 				
 			),
 			array(
+				'field' => 'telefonos',
+				'label' => 'Telefonos',
+				'rules' => 'required',
+				
+			),
+			array(
+				'field' => 'direcciones',
+				'label' => 'Direcciones',
+				'rules' => 'required',
+				
+			),
+			array(
 				'field' => 'estado',
 				'label' => 'Estado',
 				'rules' => 'required',
@@ -111,18 +117,22 @@ estado: 1 */
 
 		if ($this->form_validation->run())
         {	
-			//die("asqui");
+		
 			$cliente = new stdClass();
 
 			foreach($this->input->post() as $key => $value){
 				$cliente->$key= $value;
 			}
 
+			
+		
            
 
 			if($cliente->idCliente > 0){
-				$resultado=$this->Clientes_model->actualizarCliente();
+				
+				$resultado=$this->Clientes_model->actualizarCliente($cliente);
 			}else{
+				
 				$resultado=$this->Clientes_model->agregarCliente($cliente);
 
 			}
@@ -141,6 +151,22 @@ estado: 1 */
 
 				$mensaje =$this->form_validation->error_array();
         }
+
+		echo json_encode(['mensaje'=>$mensaje,'codigo'=>$codigo]);
+	}
+
+	function eliminarCliente($idCliente){
+
+		$codigo =13;
+		$mensaje = '';
+
+		$resultado =$this->Clientes_model->eliminarCliente($idCliente);
+		if($resultado){
+			$mensaje ="datos del cliente eliminados correctamente";
+			$codigo =0;
+		}else{
+			$mensaje ="Hubo un error al eliminar el cliente los datos del cliente";
+		}
 
 		echo json_encode(['mensaje'=>$mensaje,'codigo'=>$codigo]);
 	}
